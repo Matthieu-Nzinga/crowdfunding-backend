@@ -1,5 +1,5 @@
-import swaggerJsDoc from 'swagger-jsdoc';
-import swaggerUi from 'swagger-ui-express';
+const swaggerJsDoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
 
 const swaggerOptions = {
   definition: {
@@ -9,19 +9,13 @@ const swaggerOptions = {
       version: '1.0.0',
       description: 'Documentation de l’API pour la plateforme de financement participatif',
     },
-    servers: [
-      {
-        url: 'http://localhost:5000',
-      },
-    ],
+    servers: [{ url: 'http://localhost:5000' }],
   },
-  apis: ['./src/routes/*.js'], // Inclure tous les fichiers de routes
+  apis: ['./src/routes/*.js'],
 };
 
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 
-const setupSwagger = (app) => {
+module.exports = (app) => {
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 };
-
-export default setupSwagger;

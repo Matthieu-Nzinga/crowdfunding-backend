@@ -1,9 +1,9 @@
-import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import authRoutes from './routes/auth.routes.js';
-import projectRoutes from './routes/project.routes.js';
-import setupSwagger from './swagger.js';
+const express = require('express');
+const cors = require('cors');
+const dotenv = require('dotenv');
+const authRoutes = require('./routes/auth.routes.js');
+const projectRoutes = require('./routes/project.routes.js');
+const setupSwagger = require('./swagger.js');
 
 dotenv.config();
 const app = express();
