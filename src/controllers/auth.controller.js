@@ -1,32 +1,183 @@
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
-const SECRET = process.env.JWT_SECRET || 'secret';
+const SECRET = process.env.JWT_SECRET || "secret";
 
-export const register = async (req, res) => {
-  const { name, email, password } = req.body;
-  const hashedPassword = await bcrypt.hash(password, 10);
+// Inscription
+const register = async (req, res) => {
+  const { name, email, password, role } = req.body;
+
+  // Vérification des champs requis
+  if (!name || !email || !password || !role) {
+    return res
+      .status(400)
+      .json({
+        error: "Tous les champs sont requis (name, email, password, role)",
+      });
+  }
 
   try {
+    // Vérifier si l'email existe déjà
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ error: "Email déjà utilisé" });
+    }
+
+    // Hashage du mot de passe
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Création de l'utilisateur avec le rôle spécifié
     const user = await prisma.user.create({
-      data: { name, email, password: hashedPassword },
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        role, // Ajout du rôle spécifié dans la requête
+      },
     });
-    res.json({ message: 'Utilisateur créé avec succès' });
+
+    // Réponse de succès
+    res.status(201).json({ message: "Utilisateur créé avec succès", user });
   } catch (error) {
-    res.status(400).json({ error: 'Email déjà utilisé' });
+    console.error(error); // Pour faciliter le débogage
+    res.status(500).json({ error: "Erreur lors de l'inscription" });
   }
 };
 
-export const login = async (req, res) => {
+// Connexion
+const login = async (req, res) => {
   const { email, password } = req.body;
-  const user = await prisma.user.findUnique({ where: { email } });
 
-  if (!user || !(await bcrypt.compare(password, user.password))) {
-    return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
+  try {
+    // Vérifier si l'email est fourni
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email et mot de passe requis" });
+    }
+
+    // Chercher l'utilisateur par email
+    const user = await prisma.user.findUnique({ where: { email } });
+
+    // Vérifier si l'utilisateur existe
+    if (!user) {
+      return res.status(401).json({ error: "Email ou mot de passe incorrect" });
+    }
+
+    // Comparer le mot de passe
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: "Email ou mot de passe incorrect" });
+    }
+
+    // Générer le token JWT
+    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
+      expiresIn: "1d",
+    });
+
+    // Répondre avec le token
+    res.json({ token });
+  } catch (error) {
+    console.error("Erreur lors de la récupération de l'utilisateur :", error);
+    res
+      .status(500)
+      .json({ error: "Erreur lors de la récupération de l'utilisateur" });
+  }
+};
+
+// Récupérer un utilisateur par ID
+const getUser = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const user = await prisma.user.findUnique({ where: { id: parseInt(id) } });
+
+    if (!user) {
+      return res.status(404).json({ error: "Utilisateur non trouvé" });
+    }
+
+    const { password, ...userWithoutPassword } = user;
+    res.status(200).json(userWithoutPassword);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ error: "Erreur lors de la récupération de l'utilisateur" });
+  }
+};
+
+// Récupérer tous les utilisateurs
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    });
+
+    res.status(200).json(users);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ error: "Erreur lors de la récupération des utilisateurs" });
+  }
+};
+
+// Mettre à jour un utilisateur
+const updateUser = async (req, res) => {
+  const { id } = req.params;
+  const { name, email, password } = req.body;
+  let updatedData = { name, email };
+
+  if (password) {
+    updatedData.password = await bcrypt.hash(password, 10);
   }
 
-  const token = jwt.sign({ userId: user.id }, SECRET, { expiresIn: '1d' });
-  res.json({ token });
+  try {
+    const user = await prisma.user.update({
+      where: { id }, // Assure-toi que c'est un UUID valide
+      data: updatedData,
+    });
+    res
+      .status(200)
+      .json({ message: "Utilisateur mis à jour avec succès", user });
+  } catch (error) {
+    console.error("Erreur Prisma:", error);
+    res.status(400).json({
+      error: "Erreur lors de la mise à jour de l'utilisateur",
+      details: error.message,
+    });
+  }
+};
+
+// Supprimer un utilisateur
+const deleteUser = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const user = await prisma.user.findUnique({ where: { id } });
+
+    if (!user) {
+      return res.status(404).json({ error: "Utilisateur non trouvé" });
+    }
+
+    await prisma.user.delete({ where: { id } });
+    res.status(200).json({ message: "Utilisateur supprimé avec succès" });
+  } catch (error) {
+    console.error("Erreur Prisma:", error);
+    res.status(400).json({
+      error: "Erreur lors de la suppression de l'utilisateur",
+      details: error.message,
+    });
+  }
+};
+
+module.exports = {
+  register,
+  login,
+  getUser,
+  getAllUsers,
+  updateUser,
+  deleteUser,
 };

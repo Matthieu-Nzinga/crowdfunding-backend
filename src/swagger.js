@@ -1,21 +1,22 @@
-const swaggerJsDoc = require('swagger-jsdoc');
-const swaggerUi = require('swagger-ui-express');
+const swaggerJsdoc = require("swagger-jsdoc");
+const swaggerUi = require("swagger-ui-express");
 
-const swaggerOptions = {
+const options = {
   definition: {
-    openapi: '3.0.0',
+    openapi: "3.0.0",
     info: {
-      title: 'Crowdfunding API',
-      version: '1.0.0',
-      description: 'Documentation de l’API pour la plateforme de financement participatif',
+      title: "Crowdfunding API",
+      version: "1.0.0",
+      description: "API documentation for the Crowdfunding platform",
     },
-    servers: [{ url: 'http://localhost:5000' }],
   },
-  apis: ['./src/routes/*.js'],
+  apis: ["./src/routes/*.js"], // Spécifie le chemin vers tes fichiers de routes pour la documentation
 };
 
-const swaggerDocs = swaggerJsDoc(swaggerOptions);
+const specs = swaggerJsdoc(options);
 
-module.exports = (app) => {
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+const setupSwagger = (app) => {
+  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 };
+
+module.exports = setupSwagger;
