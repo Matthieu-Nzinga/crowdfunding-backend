@@ -176,21 +176,21 @@ const { authenticateToken } = require("../middlewares/authMiddleware.js");
 
 const router = express.Router();
 
-// Inscription d'un utilisateur
+
 router.post("/register", register);
 
-// Connexion d'un utilisateur
+
 router.post("/login", login);
 
-// Récupérer un utilisateur par son ID
+
 router.get("/:id", getUser);
 
 router.get("/", getAllUsers);
 
-// Mettre à jour un utilisateur
+
 router.put("/:id", authenticateToken, updateUser);
 
-// Supprimer un utilisateur
+
 router.delete("/:id", authenticateToken, deleteUser);
 
 module.exports = router;

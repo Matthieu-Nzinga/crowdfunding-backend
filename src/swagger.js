@@ -10,7 +10,7 @@ const options = {
       description: "API documentation for the Crowdfunding platform",
     },
   },
-  apis: ["./src/routes/*.js"], // Spécifie le chemin vers tes fichiers de routes pour la documentation
+  apis: ["./src/routes/*.js"], 
 };
 
 const specs = swaggerJsdoc(options);

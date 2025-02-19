@@ -14,31 +14,39 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  role      String   @default("client") 
-  projects  Project[]
+  id          String       @id @default(uuid())
+  name        String
+  email       String       @unique
+  password    String
+  role        String       @default("client")
+  projects    Project[]
   investments Investment[]
+  createdAt   DateTime     @default(now()) 
+  updatedAt   DateTime     @updatedAt
 }
 
 model Project {
-  id          String @id @default(uuid())
+  id          String       @id @default(uuid())
   title       String
   description String
-  amount      Float
+  image       String?
+  category    String?
+  goal        Float?
+  status      String       @default("pending") // Ajout d'un statut (ex: "pending", "approved", "completed")
   ownerId     String
-  owner       User   @relation(fields: [ownerId], references: [id])
+  owner       User         @relation(fields: [ownerId], references: [id])
   investments Investment[]
+  createdAt   DateTime     @default(now()) 
+  updatedAt   DateTime     @updatedAt 
 }
 
 model Investment {
-  id        String @id @default(uuid())
+  id        String   @id @default(uuid())
   amount    Float
   userId    String
-  user      User   @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
   projectId String
-  project   Project @relation(fields: [projectId], references: [id])
+  project   Project  @relation(fields: [projectId], references: [id])
+  createdAt DateTime @default(now()) 
+  updatedAt DateTime @updatedAt
 }
-
